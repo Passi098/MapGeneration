@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "6t2gjK8Qym7cxcmP1d6FLm6xj9eNh0p8BBPh8VXpuKMWEYVUyRaxAXqZ7cBc0JhoUW+KuOOBwlOqZPKdIK4auw==",
+  "success": true,
+  "projectFilePath": "D:\\Sourcetree\\MapGeneration\\MapGenerator\\MapGenerator\\MapGenerator.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\pasca\\.nuget\\packages\\microsoft.win32.systemevents\\6.0.0\\microsoft.win32.systemevents.6.0.0.nupkg.sha512",
+    "C:\\Users\\pasca\\.nuget\\packages\\system.drawing.common\\6.0.0\\system.drawing.common.6.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
