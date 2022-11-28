@@ -609,6 +609,11 @@ public class VoronoiDiagramm
 	private readonly PointF m_SearchArea;
 	private readonly PointF m_HalfSearchArea;
 
+	public VoronoiFace[] Faces
+    {
+		get { return m_Faces; }
+    }
+
     public VoronoiFace this[float _x, float _y]
     {
         get
@@ -803,26 +808,33 @@ public class VoronoiDiagramm
 
 	public void Draw(Point _size, string _name)
     {
-		PNG png = new PNG(_size.X, _size.Y);
+		PNG png = new PNG(_size.X, _size.Y, Color.LightGray);
 
-        for (int x = 0; x < _size.X; x++)
-        {
-            for (int y = 0; y < _size.Y; y++)
-            {
-				VoronoiFace face = this[(x / (float)_size.X), (y / (float)_size.Y)];
-				png[x, y] = Color.FromArgb(255, (int)(Math.Clamp(face.Point.Position.X, 0f, 1f) * 255), (int)(Math.Clamp(face.Point.Position.Y, 0f, 1f) * 255), 0);
-            }
-        }
+    //    for (int x = 0; x < _size.X; x++)
+    //    {
+    //        for (int y = 0; y < _size.Y; y++)
+    //        {
+				//VoronoiFace face = this[(x / (float)_size.X), (y / (float)_size.Y)];
+				//png[x, y] = Color.FromArgb(255, (int)(Math.Clamp(face.Point.Position.X, 0f, 1f) * 255), (int)(Math.Clamp(face.Point.Position.Y, 0f, 1f) * 255), 0);
+    //        }
+    //    }
 
         foreach (VoronoiFace face in m_Faces)
         {
-            png.DrawRect(Color.Blue, face.Point.Position.X * _size.X, face.Point.Position.Y * _size.Y, 2, 2);
+            png.DrawRect(Color.Red, face.Point.Position.X * _size.X, face.Point.Position.Y * _size.Y, _size.X / 100, _size.Y / 100);
 
-            //foreach (VoronoiEdge edge in face.Edges)
-            //{
-            //    png.DrawLine(Color.Black, (int)(edge.Vertex[0].Position.X * _size.X), (int)(edge.Vertex[0].Position.Y * _size.Y), (int)(edge.Vertex[1].Position.X * _size.X), (int)(edge.Vertex[1].Position.Y * _size.Y));
-            //    png.DrawLine(Color.White, (int)(edge.Faces[0].Point.Position.X * _size.X), (int)(edge.Faces[0].Point.Position.Y * _size.Y), (int)(edge.Faces[1].Point.Position.X * _size.X), (int)(edge.Faces[1].Point.Position.Y * _size.Y));
-            //}
+            foreach (VoronoiEdge edge in face.Edges)
+            {
+				//Edges
+                png.DrawLine(Color.White, (int)(Math.Clamp(edge.Vertex[0].Position.X, 0f, 1f) * _size.X), (int)(Math.Clamp(edge.Vertex[0].Position.Y, 0f, 1f) * _size.Y), (int)(Math.Clamp(edge.Vertex[1].Position.X, 0f, 1f) * _size.X), (int)(Math.Clamp(edge.Vertex[1].Position.Y, 0f, 1f) * _size.Y));
+                //Triangulation
+				png.DrawLine(Color.Black, (int)(Math.Clamp(edge.Faces[0].Point.Position.X, 0f, 1f) * _size.X), (int)(Math.Clamp(edge.Faces[0].Point.Position.Y, 0f, 1f) * _size.Y), (int)(Math.Clamp(edge.Faces[1].Point.Position.X, 0f, 1f) * _size.X), (int)(Math.Clamp(edge.Faces[1].Point.Position.Y, 0f, 1f) * _size.Y));
+
+                foreach (VoronoiVertex vertex in edge.Vertex)
+                {
+					png.DrawRect(Color.Blue, (int)(Math.Clamp(vertex.Position.X, 0f, 1f) * _size.X), (int)(Math.Clamp(vertex.Position.Y, 0f, 1f) * _size.Y), _size.X / 200, _size.Y / 200);
+                }
+			}
         }
 
         png.Save(Environment.CurrentDirectory + @"\" + _name + ".png");
