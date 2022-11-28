@@ -16,7 +16,7 @@ namespace MapGenerator
             //int perlinSeed = 3;
             //int perlinDetail = 10;
             //DrawPerlin(new PerlinNoiseDiagramm(perlinDetail, perlinSeed), "Perlin_" + perlinDetail + "_" + perlinSeed);
-            MapGenerator.GenerateMap(100, 2, 2, 100, new Point(400, 400));
+            MapGenerator.GenerateMap(200, 2, 2, 100, new Point(400, 400));
             Console.WriteLine("Done");
             //for (int seed = 0; seed < 10; seed++)
             //{

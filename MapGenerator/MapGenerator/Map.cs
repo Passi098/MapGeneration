@@ -15,6 +15,21 @@ namespace MapGenerator
         Ocean = 0,
         Land = 1,
         Lake = 2,
+        River,
+        Beach,
+        Snow,
+        Tundra,
+        Bare,
+        Scorched,
+        Taiga,
+        Shrubland,
+        TemprateDesert,
+        TemprateRainForest,
+        TemprateDecideusForest,
+        Grassland,
+        TropicalRainForest,
+        TropicalSeasonalForest,
+        SubtropicalDesert
     }
 
     class Map
@@ -29,7 +44,8 @@ namespace MapGenerator
     {
         WaterLand,
         Elevation,
-        Moisture
+        Moisture,
+        Bioms
     }
 
     class MapGenerator
@@ -123,7 +139,7 @@ namespace MapGenerator
 
             foreach (VoronoiFace face in faceToMapHeight.Keys)
             {
-                if (faceToMapHeight[face] <= (1f / maxHeight) * 1.5f)
+                if (faceToMapHeight[face] <= (1f / maxHeight) * 2.5f)
                 {
                     faceToBiom.Add(face, EBioms.Lake);
                 }
@@ -241,7 +257,7 @@ namespace MapGenerator
                 }
             }
 
-            int riverCount = (int)(((rng.NextDouble() * 0.2) + 0.1) * highestVertecies.Count);
+            int riverCount = (int)(((rng.NextDouble() * 0.1) + 0.05) * highestVertecies.Count);
             for (int i = 0; i < riverCount; i++)
             {
                 VoronoiVertex curVertex = highestVertecies[rng.Next(0, highestVertecies.Count)];
@@ -307,8 +323,129 @@ namespace MapGenerator
 
             #endregion Moisture
 
+            #region Advanced Bioms
+
+            Dictionary<int, Dictionary<int, EBioms>> bioms = new Dictionary<int, Dictionary<int, EBioms>>()
+            {
+                {4, new Dictionary<int, EBioms>(){
+                    {5, EBioms.Snow},
+                    {4, EBioms.Snow},
+                    {3, EBioms.Snow},
+                    {2, EBioms.Tundra},
+                    {1, EBioms.Bare},
+                    {0, EBioms.Scorched}
+                }},
+                {3, new Dictionary<int, EBioms>(){
+                    {5, EBioms.Taiga},
+                    {4, EBioms.Taiga},
+                    {3, EBioms.Shrubland},
+                    {2, EBioms.Shrubland},
+                    {1, EBioms.TemprateDesert},
+                    {0, EBioms.TemprateDesert}
+                }},
+                {2, new Dictionary<int, EBioms>(){
+                    {5, EBioms.TemprateRainForest},
+                    {4, EBioms.TemprateDecideusForest},
+                    {3, EBioms.TemprateDecideusForest},
+                    {2, EBioms.Grassland},
+                    {1, EBioms.Grassland},
+                    {0, EBioms.TemprateDesert}
+                }},
+                {1, new Dictionary<int, EBioms>(){
+                    {5, EBioms.TropicalRainForest},
+                    {4, EBioms.TropicalRainForest},
+                    {3, EBioms.TropicalSeasonalForest},
+                    {2, EBioms.TropicalSeasonalForest},
+                    {1, EBioms.Grassland},
+                    {0, EBioms.SubtropicalDesert}
+                }},
+
+
+            };
+
+            foreach (VoronoiFace face in faceToBiom.Keys)
+            {
+                if(faceToBiom[face] == EBioms.Land)
+                {
+                    faceToBiom[face] = GetBiom(face);
+                }
+            }
+
+            EBioms GetBiom(VoronoiFace _face)
+            {
+                if(IsBeach())
+                {
+                    return EBioms.Beach;
+                }
+
+                return GetBiom(Math.Clamp((int)faceToElevation[_face], 0, 3), Math.Clamp(faceToMoisture[_face], 0, 5));
+
+                bool IsBeach()
+                {
+                    foreach (VoronoiFace neighbor in _face.Neighbors)
+                    {
+                        if (faceToBiom[neighbor] == EBioms.Ocean)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                
+                EBioms GetBiom(int _height, int _moisture)
+                {
+                    return bioms[_height][_moisture];
+                }
+            }
+
+            Color GetBiomColor(EBioms _biom)
+            {
+                switch (_biom)
+                {
+                    case EBioms.Ocean:
+                        return Color.FromArgb(255,  54,  54,  97);
+                    case EBioms.Lake:
+                        return Color.FromArgb(255,  85, 125, 166);
+                    case EBioms.River:
+                        return Color.FromArgb(255,  34,  85, 136);
+                    case EBioms.Beach:
+                        return Color.FromArgb(255, 172, 159, 139);
+                    case EBioms.Snow:
+                        return Color.FromArgb(255, 248, 248, 248);
+                    case EBioms.Tundra:
+                        return Color.FromArgb(255, 221, 221, 187);
+                    case EBioms.Bare:
+                        return Color.FromArgb(255, 187, 187, 187);
+                    case EBioms.Scorched:
+                        return Color.FromArgb(255, 153, 153, 153);
+                    case EBioms.Taiga:
+                        return Color.FromArgb(255, 204, 212, 187);
+                    case EBioms.Shrubland:
+                        return Color.FromArgb(255, 196, 204, 187);
+                    case EBioms.TemprateDesert:
+                        return Color.FromArgb(255, 228, 232, 202);
+                    case EBioms.TemprateRainForest:
+                        return Color.FromArgb(255, 164, 196, 168);
+                    case EBioms.TemprateDecideusForest:
+                        return Color.FromArgb(255, 180, 201, 169);
+                    case EBioms.Grassland:
+                        return Color.FromArgb(255, 196, 212, 170);
+                    case EBioms.TropicalRainForest:
+                        return Color.FromArgb(255, 156, 187, 169);
+                    case EBioms.TropicalSeasonalForest:
+                        return Color.FromArgb(255, 169, 204, 164);
+                    case EBioms.SubtropicalDesert:
+                        return Color.FromArgb(255, 233, 221, 199);
+                }
+                return Color.Magenta;
+            }
+
+            #endregion Advance Bioms
+
+            #region Draw
+
             float x, y;
-            switch (DrawMode.Moisture)
+            switch (DrawMode.Bioms)
 	        {
 		        case DrawMode.WaterLand:
                     {
@@ -365,15 +502,12 @@ namespace MapGenerator
                                             image[(int)i, (int)j] = Color.MidnightBlue;
                                             break;
                                         }
-                                    case EBioms.Land:
-                                    case EBioms.Lake:
+                                    default:
                                         {
                                             float elevationMultiplier = faceToElevation[face] / highestElevation;
                                             image[(int)i, (int)j] = Color.FromArgb(255, 50 + (int)(205 * elevationMultiplier), 100 + (int)(155 * elevationMultiplier), 50 + (int)(205 * elevationMultiplier));
                                             break;
                                         }
-                                    default:
-                                        break;
                                 }
                             }
                         }
@@ -420,14 +554,12 @@ namespace MapGenerator
                                             image[(int)i, (int)j] = Color.FromArgb(255, 50, 100, 150);
                                             break;
                                         }
-                                    case EBioms.Land:
+                                    default:
                                         {
                                             float moistureMultiplier = Math.Min(faceToMoisture[face], 6) / 6f;
                                             image[(int)i, (int)j] = Color.FromArgb(255, 200 - (int)(150 * moistureMultiplier), 200 - (int)(100 * moistureMultiplier), 150 - (int)(50 * moistureMultiplier));
                                             break;
                                         }
-                                    default:
-                                        break;
                                 }
                             }
                         }
@@ -450,20 +582,42 @@ namespace MapGenerator
                         }
                         break;
                     }
+                case DrawMode.Bioms:
+                    {
+                        for (float i = 0; i < _imageSize.X; i++)
+                        {
+                            x = i / _imageSize.X;
+                            for (float j = 0; j < _imageSize.Y; j++)
+                            {
+                                y = j / _imageSize.Y;
+
+                                image[(int)i, (int)j] = GetBiomColor(faceToBiom[voronoi[x, y]]);
+                            }
+                        }
+
+
+                        foreach (VoronoiFace face in voronoi.Faces)
+                        {
+                            //image.DrawRect(Color.Black, face.Point.Position.X * _imageSize.X, face.Point.Position.Y * _imageSize.Y, _imageSize.X / 100, _imageSize.Y / 100);
+
+                            foreach (VoronoiEdge edge in face.Edges)
+                            {
+                                //Edges
+                                image.DrawLine(Color.Black, (int)(Math.Clamp(edge.Vertex[0].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[0].Position.Y, 0f, 1f) * _imageSize.Y), (int)(Math.Clamp(edge.Vertex[1].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[1].Position.Y, 0f, 1f) * _imageSize.Y));
+                            }
+                        }
+
+                        foreach (VoronoiEdge edge in rivers)
+                        {
+                            image.DrawLine(GetBiomColor(EBioms.River), 3, (int)(edge.Vertex[0].Position.X * image.SizeX), (int)(edge.Vertex[0].Position.Y * image.SizeY), (int)(edge.Vertex[1].Position.X * image.SizeX), (int)(edge.Vertex[1].Position.Y * image.SizeY));
+                        }
+                        break;
+                    }
 	        }
 
-            //Draw Bioms
-
-
-            //Draw Elevation
-            //float x, y;
-
-        
-
-            //Draw Moisture
-            //float x, y;
-
             image.Save(Environment.CurrentDirectory + @"\Step8.png");
+
+            #endregion Draw;
 
 
             return null;
