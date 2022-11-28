@@ -23,6 +23,15 @@ namespace MapGenerator
         
     }
 
+
+
+    enum DrawMode
+    {
+        WaterLand,
+        Elevation,
+        Moisture
+    }
+
     class MapGenerator
     {
         public static PNG GenerateMap(int _detail, int _seed, int _relaxions, int _smoothness, Point _imageSize)
@@ -30,6 +39,10 @@ namespace MapGenerator
             PNG image = new PNG(_imageSize.X, _imageSize.Y, Color.White);
 
             VoronoiDiagramm voronoi = VoronoiGenerator.GenerateVoronoi(_detail, _seed);
+
+            Dictionary<VoronoiFace, MapFace> faces = new Dictionary<VoronoiFace, MapFace>();
+            Dictionary<VoronoiEdge, MapEdge> edges = new Dictionary<VoronoiEdge, MapEdge>();
+            Dictionary<VoronoiVertex, MapVertex> vertecies = new Dictionary<VoronoiVertex, MapVertex>();
 
             for (int i = 0; i < _relaxions; i++)
             {
@@ -214,91 +227,15 @@ namespace MapGenerator
 
             #endregion Elevation
 
-            //Draw Bioms
-            //float x, y;
+            #region Rivers
 
-            //for (float i = 0; i < _imageSize.X; i++)
-            //{
-            //    x = i / _imageSize.X;
-            //    for (float j = 0; j < _imageSize.Y; j++)
-            //    {
-            //        y = j / _imageSize.Y;
-
-            //        switch (faceToBiom[voronoi[x, y]])
-            //        {
-            //            case EBioms.None:
-            //                break;
-            //            case EBioms.Ocean:
-            //                {
-            //                    image[(int)i, (int)j] = Color.Blue;
-            //                    break;
-            //                }
-            //            case EBioms.Land:
-            //                {
-            //                    image[(int)i, (int)j] = Color.SandyBrown;
-            //                    break;
-            //                }
-            //            case EBioms.Lake:
-            //                {
-            //                    image[(int)i, (int)j] = Color.Aqua;
-            //                    break;
-            //                }
-            //            default:
-            //                break;
-            //        }
-            //    }
-            //}
-
-            //Draw Elevation
-            float x, y;
-
-            for (float i = 0; i < _imageSize.X; i++)
-            {
-                x = i / _imageSize.X;
-                for (float j = 0; j < _imageSize.Y; j++)
-                {
-                    y = j / _imageSize.Y;
-
-                    VoronoiFace face = voronoi[x, y];
-                    switch (faceToBiom[face])
-                    {
-                        case EBioms.None:
-                            break;
-                        case EBioms.Ocean:
-                            {
-                                image[(int)i, (int)j] = Color.MidnightBlue;
-                                break;
-                            }
-                        case EBioms.Land:
-                        case EBioms.Lake:
-                            {
-                                float elevationMultiplier = faceToElevation[face] / highestElevation;
-                                image[(int)i, (int)j] = Color.FromArgb(255, 50 + (int)(205 * elevationMultiplier), 100 + (int)(155 * elevationMultiplier), 50 + (int)(205 * elevationMultiplier));
-                                break;
-                            }
-                        default:
-                            break;
-                    }
-                }
-            }
-
-
-            foreach (VoronoiFace face in voronoi.Faces)
-            {
-                image.DrawRect(Color.Black, face.Point.Position.X * _imageSize.X, face.Point.Position.Y * _imageSize.Y, _imageSize.X / 100, _imageSize.Y / 100);
-
-                foreach (VoronoiEdge edge in face.Edges)
-                {
-                    //Edges
-                    image.DrawLine(Color.Black, (int)(Math.Clamp(edge.Vertex[0].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[0].Position.Y, 0f, 1f) * _imageSize.Y), (int)(Math.Clamp(edge.Vertex[1].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[1].Position.Y, 0f, 1f) * _imageSize.Y));
-                }
-            }
+            List<VoronoiEdge> rivers = new List<VoronoiEdge>();
 
             List<VoronoiVertex> highVertecies = new List<VoronoiVertex>();
 
             foreach (VoronoiVertex vertex in vertexToElevation.Keys)
             {
-                if(vertexToElevation[vertex] > 0)
+                if (vertexToElevation[vertex] > 0)
                 {
                     highestVertecies.Add(vertex);
                 }
@@ -312,27 +249,29 @@ namespace MapGenerator
 
                 while (vertexToElevation[curVertex] > 0)
                 {
-                    VoronoiVertex nextVertex = GetLowestNeighbor(curVertex);
-                    if(nextVertex == null)
+                    VoronoiEdge river = GetLowestNeighbor(curVertex, out VoronoiVertex nextVertex);
+                    if (nextVertex == null)
                     {
                         break;
                     }
-                    image.DrawLine(Color.Blue, 3, (int)(curVertex.Position.X * image.SizeX), (int)(curVertex.Position.Y * image.SizeY), (int)(nextVertex.Position.X * image.SizeX), (int)(nextVertex.Position.Y * image.SizeY));
+                    rivers.Add(river);
                     curVertex = nextVertex;
                 }
 
-                VoronoiVertex GetLowestNeighbor(VoronoiVertex vertex)
+                VoronoiEdge GetLowestNeighbor(VoronoiVertex vertex, out VoronoiVertex _nearest)
                 {
                     int lowest = vertexToElevation[vertex];
-                    VoronoiVertex result = null;
+                    VoronoiEdge result = null;
+                    _nearest = null;
                     foreach (VoronoiEdge edge in vertex.Edges)
                     {
                         foreach (VoronoiVertex neighbor in edge.Vertex)
                         {
-                            if(vertexToElevation[neighbor] < lowest)
+                            if (vertexToElevation[neighbor] < lowest)
                             {
                                 lowest = vertexToElevation[neighbor];
-                                result = neighbor;
+                                _nearest = neighbor;
+                                result = edge;
                             }
                         }
                     }
@@ -340,8 +279,191 @@ namespace MapGenerator
                 }
             }
 
+            #endregion Rivers
 
-            image.Save(Environment.CurrentDirectory + @"\Step7.png");
+            #region Moisture
+
+            Dictionary<VoronoiFace, int> faceToMoisture = new Dictionary<VoronoiFace, int>();
+
+            foreach (VoronoiFace face in voronoi.Faces)
+            {
+                faceToMoisture.Add(face, 0);
+                foreach (VoronoiFace neighbor in face.Neighbors)
+                {
+                    if (faceToBiom[neighbor] == EBioms.Ocean || faceToBiom[neighbor] == EBioms.Lake)
+                    {
+                        faceToMoisture[face]++;
+                    }
+                }
+
+                foreach (VoronoiEdge edge in face.Edges)
+                {
+                    if(rivers.Contains(edge))
+                    {
+                        faceToMoisture[face]++;
+                    }
+                }
+            }
+
+            #endregion Moisture
+
+            float x, y;
+            switch (DrawMode.Moisture)
+	        {
+		        case DrawMode.WaterLand:
+                    {
+
+                        for (float i = 0; i < _imageSize.X; i++)
+                        {
+                            x = i / _imageSize.X;
+                            for (float j = 0; j < _imageSize.Y; j++)
+                            {
+                                y = j / _imageSize.Y;
+
+                                switch (faceToBiom[voronoi[x, y]])
+                                {
+                                    case EBioms.None:
+                                        break;
+                                    case EBioms.Ocean:
+                                        {
+                                            image[(int)i, (int)j] = Color.Blue;
+                                            break;
+                                        }
+                                    case EBioms.Land:
+                                        {
+                                            image[(int)i, (int)j] = Color.SandyBrown;
+                                            break;
+                                        }
+                                    case EBioms.Lake:
+                                        {
+                                            image[(int)i, (int)j] = Color.Aqua;
+                                            break;
+                                        }
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
+                        break;
+                    }
+                case DrawMode.Elevation:
+                    {
+                        for (float i = 0; i < _imageSize.X; i++)
+                        {
+                            x = i / _imageSize.X;
+                            for (float j = 0; j < _imageSize.Y; j++)
+                            {
+                                y = j / _imageSize.Y;
+
+                                VoronoiFace face = voronoi[x, y];
+                                switch (faceToBiom[face])
+                                {
+                                    case EBioms.None:
+                                        break;
+                                    case EBioms.Ocean:
+                                        {
+                                            image[(int)i, (int)j] = Color.MidnightBlue;
+                                            break;
+                                        }
+                                    case EBioms.Land:
+                                    case EBioms.Lake:
+                                        {
+                                            float elevationMultiplier = faceToElevation[face] / highestElevation;
+                                            image[(int)i, (int)j] = Color.FromArgb(255, 50 + (int)(205 * elevationMultiplier), 100 + (int)(155 * elevationMultiplier), 50 + (int)(205 * elevationMultiplier));
+                                            break;
+                                        }
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
+
+
+                        foreach (VoronoiFace face in voronoi.Faces)
+                        {
+                            image.DrawRect(Color.Black, face.Point.Position.X * _imageSize.X, face.Point.Position.Y * _imageSize.Y, _imageSize.X / 100, _imageSize.Y / 100);
+
+                            foreach (VoronoiEdge edge in face.Edges)
+                            {
+                                //Edges
+                                image.DrawLine(Color.Black, (int)(Math.Clamp(edge.Vertex[0].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[0].Position.Y, 0f, 1f) * _imageSize.Y), (int)(Math.Clamp(edge.Vertex[1].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[1].Position.Y, 0f, 1f) * _imageSize.Y));
+                            }
+                        }
+
+                        foreach (VoronoiEdge edge in rivers)
+                        {
+                            image.DrawLine(Color.Blue, 3, (int)(edge.Vertex[0].Position.X * image.SizeX), (int)(edge.Vertex[0].Position.Y * image.SizeY), (int)(edge.Vertex[1].Position.X * image.SizeX), (int)(edge.Vertex[1].Position.Y * image.SizeY));
+                        }
+                        break;
+                    }
+                case DrawMode.Moisture:
+                    {
+                        for (float i = 0; i < _imageSize.X; i++)
+                        {
+                            x = i / _imageSize.X;
+                            for (float j = 0; j < _imageSize.Y; j++)
+                            {
+                                y = j / _imageSize.Y;
+
+                                VoronoiFace face = voronoi[x, y];
+                                switch (faceToBiom[face])
+                                {
+                                    case EBioms.None:
+                                        break;
+                                    case EBioms.Ocean:
+                                        {
+                                            image[(int)i, (int)j] = Color.FromArgb(255, 54, 54, 92);
+                                            break;
+                                        }
+                                    case EBioms.Lake:
+                                        {
+                                            image[(int)i, (int)j] = Color.FromArgb(255, 50, 100, 150);
+                                            break;
+                                        }
+                                    case EBioms.Land:
+                                        {
+                                            float moistureMultiplier = Math.Min(faceToMoisture[face], 6) / 6f;
+                                            image[(int)i, (int)j] = Color.FromArgb(255, 200 - (int)(150 * moistureMultiplier), 200 - (int)(100 * moistureMultiplier), 150 - (int)(50 * moistureMultiplier));
+                                            break;
+                                        }
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
+
+
+                        foreach (VoronoiFace face in voronoi.Faces)
+                        {
+                            image.DrawRect(Color.Black, face.Point.Position.X * _imageSize.X, face.Point.Position.Y * _imageSize.Y, _imageSize.X / 100, _imageSize.Y / 100);
+
+                            foreach (VoronoiEdge edge in face.Edges)
+                            {
+                                //Edges
+                                image.DrawLine(Color.Black, (int)(Math.Clamp(edge.Vertex[0].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[0].Position.Y, 0f, 1f) * _imageSize.Y), (int)(Math.Clamp(edge.Vertex[1].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[1].Position.Y, 0f, 1f) * _imageSize.Y));
+                            }
+                        }
+
+                        foreach (VoronoiEdge edge in rivers)
+                        {
+                            image.DrawLine(Color.FromArgb(255, 35, 85, 135), 3, (int)(edge.Vertex[0].Position.X * image.SizeX), (int)(edge.Vertex[0].Position.Y * image.SizeY), (int)(edge.Vertex[1].Position.X * image.SizeX), (int)(edge.Vertex[1].Position.Y * image.SizeY));
+                        }
+                        break;
+                    }
+	        }
+
+            //Draw Bioms
+
+
+            //Draw Elevation
+            //float x, y;
+
+        
+
+            //Draw Moisture
+            //float x, y;
+
+            image.Save(Environment.CurrentDirectory + @"\Step8.png");
 
 
             return null;
@@ -358,5 +480,23 @@ namespace MapGenerator
                 return false;
             }
         }
-    }
+
+        private class MapFace
+        {
+            public VoronoiFace m_Face;
+            public int m_Height;
+        }
+
+        private class MapVertex
+        {
+            public VoronoiVertex m_Vertex;
+            public int m_Elevation;
+        }
+
+        private class MapEdge
+        {
+            public VoronoiEdge m_Edge;
+            public bool m_IsRiver = false;
+        }
+    } 
 }
