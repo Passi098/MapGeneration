@@ -81,6 +81,11 @@ namespace PNGConverter
             m_Graphic.DrawLine(new Pen(new SolidBrush(_color)), new Point(_aX, _aY), new Point(_bX, _bY));
         }
 
+        public void DrawLine(Color _color, float _width, int _aX, int _aY, int _bX, int _bY)
+        {
+            m_Graphic.DrawLine(new Pen(new SolidBrush(_color), _width), new Point(_aX, _aY), new Point(_bX, _bY));
+        }
+
         public void DrawLine(Color _color, PointF _a, PointF _b)
         {
             m_Graphic.DrawLine(new Pen(new SolidBrush(_color)), _a, _b);
