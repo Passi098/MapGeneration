@@ -139,7 +139,7 @@ namespace MapGenerator
 
             foreach (VoronoiFace face in faceToMapHeight.Keys)
             {
-                if (faceToMapHeight[face] <= (1f / maxHeight) * 2.5f)
+                if (faceToMapHeight[face] <= (1f / maxHeight) * 1.5f)
                 {
                     faceToBiom.Add(face, EBioms.Lake);
                 }
@@ -257,7 +257,7 @@ namespace MapGenerator
                 }
             }
 
-            int riverCount = (int)(((rng.NextDouble() * 0.1) + 0.05) * highestVertecies.Count);
+            int riverCount = (int)(((rng.NextDouble() * 0.2) + 0.1) * highestVertecies.Count);
             for (int i = 0; i < riverCount; i++)
             {
                 VoronoiVertex curVertex = highestVertecies[rng.Next(0, highestVertecies.Count)];
@@ -445,7 +445,7 @@ namespace MapGenerator
             #region Draw
 
             float x, y;
-            switch (DrawMode.Bioms)
+            switch (DrawMode.Moisture)
 	        {
 		        case DrawMode.WaterLand:
                     {
@@ -565,16 +565,16 @@ namespace MapGenerator
                         }
 
 
-                        foreach (VoronoiFace face in voronoi.Faces)
-                        {
-                            image.DrawRect(Color.Black, face.Point.Position.X * _imageSize.X, face.Point.Position.Y * _imageSize.Y, _imageSize.X / 100, _imageSize.Y / 100);
+                        //foreach (VoronoiFace face in voronoi.Faces)
+                        //{
+                        //    image.DrawRect(Color.Black, face.Point.Position.X * _imageSize.X, face.Point.Position.Y * _imageSize.Y, _imageSize.X / 100, _imageSize.Y / 100);
 
-                            foreach (VoronoiEdge edge in face.Edges)
-                            {
-                                //Edges
-                                image.DrawLine(Color.Black, (int)(Math.Clamp(edge.Vertex[0].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[0].Position.Y, 0f, 1f) * _imageSize.Y), (int)(Math.Clamp(edge.Vertex[1].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[1].Position.Y, 0f, 1f) * _imageSize.Y));
-                            }
-                        }
+                        //    foreach (VoronoiEdge edge in face.Edges)
+                        //    {
+                        //        //Edges
+                        //        image.DrawLine(Color.Black, (int)(Math.Clamp(edge.Vertex[0].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[0].Position.Y, 0f, 1f) * _imageSize.Y), (int)(Math.Clamp(edge.Vertex[1].Position.X, 0f, 1f) * _imageSize.X), (int)(Math.Clamp(edge.Vertex[1].Position.Y, 0f, 1f) * _imageSize.Y));
+                        //    }
+                        //}
 
                         foreach (VoronoiEdge edge in rivers)
                         {
@@ -583,22 +583,22 @@ namespace MapGenerator
                         break;
                     }
                 case DrawMode.Bioms:
-                    {
-                        for (float i = 0; i < _imageSize.X; i++)
-                        {
-                            x = i / _imageSize.X;
-                            for (float j = 0; j < _imageSize.Y; j++)
-                            {
-                                y = j / _imageSize.Y;
+                     {
+                        //for (float i = 0; i < _imageSize.X; i++)
+                        //{
+                        //    x = i / _imageSize.X;
+                        //    for (float j = 0; j < _imageSize.Y; j++)
+                        //    {
+                        //        y = j / _imageSize.Y;
 
-                                image[(int)i, (int)j] = GetBiomColor(faceToBiom[voronoi[x, y]]);
-                            }
-                        }
+                        //        image[(int)i, (int)j] = GetBiomColor(faceToBiom[voronoi[x, y]]);
+                        //    }
+                        //}
 
 
                         foreach (VoronoiFace face in voronoi.Faces)
                         {
-                            //image.DrawRect(Color.Black, face.Point.Position.X * _imageSize.X, face.Point.Position.Y * _imageSize.Y, _imageSize.X / 100, _imageSize.Y / 100);
+                            image.DrawRect(Color.Red, face.Point.Position.X * _imageSize.X, face.Point.Position.Y * _imageSize.Y, _imageSize.X / 100, _imageSize.Y / 100);
 
                             foreach (VoronoiEdge edge in face.Edges)
                             {
@@ -607,15 +607,15 @@ namespace MapGenerator
                             }
                         }
 
-                        foreach (VoronoiEdge edge in rivers)
-                        {
-                            image.DrawLine(GetBiomColor(EBioms.River), 3, (int)(edge.Vertex[0].Position.X * image.SizeX), (int)(edge.Vertex[0].Position.Y * image.SizeY), (int)(edge.Vertex[1].Position.X * image.SizeX), (int)(edge.Vertex[1].Position.Y * image.SizeY));
-                        }
+                        //foreach (VoronoiEdge edge in rivers)
+                        //{
+                        //    image.DrawLine(GetBiomColor(EBioms.Lake), 3, (int)(edge.Vertex[0].Position.X * image.SizeX), (int)(edge.Vertex[0].Position.Y * image.SizeY), (int)(edge.Vertex[1].Position.X * image.SizeX), (int)(edge.Vertex[1].Position.Y * image.SizeY));
+                        //}
                         break;
                     }
 	        }
 
-            image.Save(Environment.CurrentDirectory + @"\Step8.png");
+            image.Save(Environment.CurrentDirectory + @"\Step10.png");
 
             #endregion Draw;
 
@@ -651,6 +651,33 @@ namespace MapGenerator
         {
             public VoronoiEdge m_Edge;
             public bool m_IsRiver = false;
+        }
+
+        private class NoisyEdge
+        {
+            PointF[] m_Vertecies;
+
+            public NoisyEdge(Random _rng, PointF _pointA, PointF _pointB, PointF _vertexC, PointF _vertexD)
+            {
+                PointF centroidE = GetCenter4(_pointA, _pointB, _vertexC, _vertexD);
+                PointF AC = GetCenter2(_pointA, _vertexC);
+                PointF AD = GetCenter2(_pointA, _vertexD);
+                PointF BC = GetCenter2(_pointB, _vertexC);
+                PointF BD = GetCenter2(_pointB, _vertexD);
+
+                PointF AC_BC_C_E = GetCenter4(AC, BC, _vertexC, centroidE);
+                PointF AD_BD_D_E = GetCenter4(AD, BD, _vertexD, centroidE);
+
+                PointF GetCenter2(PointF _a, PointF _b)
+                {
+                    return new PointF((_a.X + _b.X) / 2, (_a.Y + _b.Y) / 2);
+                }
+
+                PointF GetCenter4(PointF _a, PointF _b, PointF _c, PointF _d)
+                {
+                    return new PointF((_a.X + _b.X + _c.X + _d.X) / 4, (_a.Y + _b.Y + _c.Y + _d.Y) / 4);
+                }
+            }
         }
     } 
 }

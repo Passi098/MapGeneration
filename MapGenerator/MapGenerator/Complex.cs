@@ -6,7 +6,7 @@ using PNGConverter;
 // Diese Klasse implementiert eine Vergleichsmethode für das Sortieren der Punkte
 class PointComparer : Comparer<PointF>
 {
-	// Vergleichsmethode, die die Punkte von links nach rechts und bei Gleichheit von oben nach unten sortiert
+	// Vergleichsmethode, welche die Punkte von links nach rechts und bei Gleichheit von oben nach unten sortiert
 	public override int Compare(PointF point1, PointF point2)
 	{
 		int result = point1.X.CompareTo(point2.X);
@@ -21,7 +21,7 @@ class PointComparer : Comparer<PointF>
 // Diese Klasse implementiert eine Vergleichsmethode für das Sortieren der CircleEvents
 class EventComparer : Comparer<CircleEvent>
 {
-	// Vergleichsmethode, die die CircleEvents
+	// Vergleichsmethode, für die CircleEvents
 	public override int Compare(CircleEvent event1, CircleEvent event2)
 	{
 		return event1.x.CompareTo(event2.x);
@@ -49,7 +49,7 @@ class CircleEvent
 // Klasse für die Parabelbögen
 class ParabolaArc
 {
-	public PointF point; // Das Zentrum, das der Brennpunkt der Parabel ist
+	public PointF point; // Das Zentrum, der Brennpunkt der Parabel
 	public ParabolaArc previousArc, nextArc; // Benachbarte Parabelbögen
 	public CircleEvent circleEvent; // Zugeordnetes CircleEvent
 	private VEdge edge1, edge2; // Benachbarte Voronoi-Kanten
